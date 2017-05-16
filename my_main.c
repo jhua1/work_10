@@ -123,6 +123,15 @@ void first_pass() {
   jdyrlandweaver
   ====================*/
 struct vary_node ** second_pass() {
+  struct vary_node * ll[100];
+  
+  int i,x;
+  for (i = 0; i < lastop; i++){
+    switch(op[i].opcode)
+      {
+      case VARY:
+	
+	  
   return NULL;
 }
 
