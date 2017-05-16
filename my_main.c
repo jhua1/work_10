@@ -73,7 +73,31 @@ void first_pass() {
   //they must be extern variables
   extern int num_frames;
   extern char name[128]; 
-
+  int i;
+  int basechk = 0;
+  int framechk = 0;
+  for (i = 0; i < lastop; i++){
+    switch(op[i].opcode)
+      {
+      case FRAMES:
+	num_frames = op[i].opcode.frames.num_frames;
+	framechk = 1;
+	break;
+      case BASENAME:
+	name = op[i].opcode.basename.p->name;
+	basechk = 1;
+	break;
+      case VARY:
+	if (framechk == 0){
+	  printf("Varying without multiple frames");
+	  exit(0);
+	}
+      }
+  }
+  if(framechk == 1 && basechk == 0){
+    strcopy(name,"default");
+    printf("No name detected. Using %s \n",name);
+  }
   return;
 }
 
