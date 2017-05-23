@@ -80,11 +80,11 @@ void first_pass() {
     switch(op[i].opcode)
       {
       case FRAMES:
-	num_frames = op[i].opcode.frames.num_frames;
+	num_frames = op[i].op.frames.num_frames;
 	framechk = 1;
 	break;
       case BASENAME:
-	name = op[i].opcode.basename.p->name;
+	strcpy( op[i].op.basename.p->name,name);
 	basechk = 1;
 	break;
       case VARY:
@@ -95,7 +95,7 @@ void first_pass() {
       }
   }
   if(framechk == 1 && basechk == 0){
-    strcopy(name,"default");
+    strcpy(name,"default");
     printf("No name detected. Using %s \n",name);
   }
   return;
@@ -123,16 +123,27 @@ void first_pass() {
   jdyrlandweaver
   ====================*/
 struct vary_node ** second_pass() {
-  struct vary_node * ll[100];
-  
-  int i,x;
+  struct vary_node ** ll;
+  extern int num_frames;
+  ll = (struct vary_node**) malloc(sizeof(struct vary_node)*num_frames);
+  int i,cf;
+  double k;
   for (i = 0; i < lastop; i++){
     switch(op[i].opcode)
       {
       case VARY:
-	
-	  
-  return NULL;
+	for( cf = op[i].op.vary.start_frame; cf < op[i].op.vary.end_frame; cf++){
+	  struct vary_node *kl = (struct vary_node*) malloc(sizeof(struct vary_node));
+	  strcpy(kl->name, op[i].op.vary.p->name);
+	  k = op[i].op.vary.start_val;
+	  kl->value = k;
+	  kl->next = ll[cf];
+	  ll[cf] = kl;
+	  k+= (op[i].op.vary.end_val-op[i].op.vary.start_val)/(op[i].op.vary.end_frame-op[i].op.vary.start_frame);
+	}
+      }
+  }	  
+  return ll;
 }
 
 
@@ -193,7 +204,7 @@ void print_knobs() {
   ====================*/
 void my_main() {
 
-  int i;
+  int i,ctr,x;
   struct matrix *tmp;
   struct stack *systems;
   screen t;
@@ -208,9 +219,20 @@ void my_main() {
   g.green = 0;
   g.blue = 0;
 
-  for (i=0;i<lastop;i++) {
+  struct vary_node **knobt;
+  struct vary_node *knob;
+  first_pass();
+  knobt = second_pass();
+  
+  for (ctr = 0; ctr < num_frames; ctr++){
 
-    printf("%d: ",i);
+    knob = knobt[ctr];
+    while (knob !=NULL){
+      set_value(lookup_symbol(knob->name), knob->value);
+      knob = knob->next;
+    }
+    for (i=0;i<lastop;i++) {	
+      printf("%d: ",i);
       switch (op[i].opcode)
 	{
 	case SPHERE:
@@ -305,10 +327,11 @@ void my_main() {
 	  if (op[i].op.move.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.move.p->name);
+	      x = lookup_symbol(op[i].op.move.p->name)->s.value;
 	    }
-	  tmp = make_translate( op[i].op.move.d[0],
-				op[i].op.move.d[1],
-				op[i].op.move.d[2]);
+	  tmp = make_translate( op[i].op.move.d[0] *x,
+				op[i].op.move.d[1] *x,
+				op[i].op.move.d[2] *x);
 	  matrix_mult(peek(systems), tmp);
 	  copy_matrix(tmp, peek(systems));
 	  tmp->lastcol = 0;
@@ -320,10 +343,11 @@ void my_main() {
 	  if (op[i].op.scale.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.scale.p->name);
+	      x = lookup_symbol(op[i].op.move.p->name)->s.value;
 	    }
-	  tmp = make_scale( op[i].op.scale.d[0],
-			    op[i].op.scale.d[1],
-			    op[i].op.scale.d[2]);
+	  tmp = make_scale( op[i].op.scale.d[0] *x,
+			    op[i].op.scale.d[1] *x,
+			    op[i].op.scale.d[2] *x);
 	  matrix_mult(peek(systems), tmp);
 	  copy_matrix(tmp, peek(systems));
 	  tmp->lastcol = 0;
@@ -335,6 +359,7 @@ void my_main() {
 	  if (op[i].op.rotate.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.rotate.p->name);
+	      theta = lookup_symbol(op[i].op.move.p->name)->s.value;
 	    }
 	  theta =  op[i].op.rotate.degrees * (M_PI / 180);
 	  if (op[i].op.rotate.axis == 0 )
@@ -364,7 +389,18 @@ void my_main() {
 	  printf("Display");
 	  display(t);
 	  break;
-    }
+	}
       printf("\n");
     }
+    if(num_frames > 1){
+      char file[256];
+      sprintf(file,"anim/%s%04d.png",name,ctr);
+      printf("frame:%d",ctr);
+      save_extension(t,file);
+    }  
+    systems = new_stack();
+    
+    clear_screen(t);
+    
+  }
 }
