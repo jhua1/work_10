@@ -124,8 +124,9 @@ void first_pass() {
   ====================*/
 struct vary_node ** second_pass() {
   struct vary_node ** ll;
+  struct vary_node *kl;
   extern int num_frames;
-  ll = (struct vary_node**) malloc(sizeof(struct vary_node)*num_frames);
+  ll = (struct vary_node**) malloc(sizeof(struct vary_node*)*num_frames);
   int i,cf;
   double k;
   for (i = 0; i < lastop; i++){
@@ -133,7 +134,7 @@ struct vary_node ** second_pass() {
       {
       case VARY:
 	for( cf = op[i].op.vary.start_frame; cf < op[i].op.vary.end_frame; cf++){
-	  struct vary_node *kl = (struct vary_node*) malloc(sizeof(struct vary_node));
+	  kl = (struct vary_node*) malloc(sizeof(struct vary_node*));
 	  strcpy(kl->name, op[i].op.vary.p->name);
 	  k = op[i].op.vary.start_val;
 	  kl->value = k;
@@ -142,7 +143,8 @@ struct vary_node ** second_pass() {
 	  k+= (op[i].op.vary.end_val-op[i].op.vary.start_val)/(op[i].op.vary.end_frame-op[i].op.vary.start_frame);
 	}
       }
-  }	  
+  }	 
+  printf("second pass done");
   return ll;
 }
 
@@ -327,7 +329,7 @@ void my_main() {
 	  if (op[i].op.move.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.move.p->name);
-	      x = lookup_symbol(op[i].op.move.p->name)->s.value;
+	      x = op[i].op.move.p->s.value;
 	    }
 	  tmp = make_translate( op[i].op.move.d[0] *x,
 				op[i].op.move.d[1] *x,
@@ -343,7 +345,7 @@ void my_main() {
 	  if (op[i].op.scale.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.scale.p->name);
-	      x = lookup_symbol(op[i].op.move.p->name)->s.value;
+	      x = op[i].op.scale.p->s.value;
 	    }
 	  tmp = make_scale( op[i].op.scale.d[0] *x,
 			    op[i].op.scale.d[1] *x,
@@ -359,7 +361,7 @@ void my_main() {
 	  if (op[i].op.rotate.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.rotate.p->name);
-	      theta = lookup_symbol(op[i].op.move.p->name)->s.value;
+	      theta = op[i].op.rotate.p->s.value;
 	    }
 	  theta =  op[i].op.rotate.degrees * (M_PI / 180);
 	  if (op[i].op.rotate.axis == 0 )
