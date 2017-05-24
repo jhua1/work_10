@@ -124,19 +124,19 @@ void first_pass() {
   ====================*/
 struct vary_node ** second_pass() {
   struct vary_node ** ll;
-  struct vary_node *kl;
   extern int num_frames;
-  ll = (struct vary_node**) malloc(sizeof(struct vary_node*)*num_frames);
+  ll = (struct vary_node**) malloc(sizeof(struct vary_node)*num_frames);
   int i,cf;
   double k;
+  k=0.0;
   for (i = 0; i < lastop; i++){
     switch(op[i].opcode)
       {
       case VARY:
+	k = op[i].op.vary.start_val;
 	for( cf = op[i].op.vary.start_frame; cf < op[i].op.vary.end_frame; cf++){
-	  kl = (struct vary_node*) malloc(sizeof(struct vary_node*));
+	  struct vary_node* kl = (struct vary_node*) malloc(sizeof(struct vary_node));
 	  strcpy(kl->name, op[i].op.vary.p->name);
-	  k = op[i].op.vary.start_val;
 	  kl->value = k;
 	  kl->next = ll[cf];
 	  ll[cf] = kl;
@@ -206,7 +206,8 @@ void print_knobs() {
   ====================*/
 void my_main() {
 
-  int i,ctr,x;
+  int i,ctr;
+  double x;
   struct matrix *tmp;
   struct stack *systems;
   screen t;
@@ -329,7 +330,7 @@ void my_main() {
 	  if (op[i].op.move.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.move.p->name);
-	      x = op[i].op.move.p->s.value;
+	      x = lookup_symbol(op[i].op.move.p->name)->s.value;
 	    }
 	  tmp = make_translate( op[i].op.move.d[0] *x,
 				op[i].op.move.d[1] *x,
@@ -345,7 +346,7 @@ void my_main() {
 	  if (op[i].op.scale.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.scale.p->name);
-	      x = op[i].op.scale.p->s.value;
+	      x = lookup_symbol(op[i].op.scale.p->name)->s.value;
 	    }
 	  tmp = make_scale( op[i].op.scale.d[0] *x,
 			    op[i].op.scale.d[1] *x,
@@ -361,9 +362,9 @@ void my_main() {
 	  if (op[i].op.rotate.p != NULL)
 	    {
 	      printf("\tknob: %s",op[i].op.rotate.p->name);
-	      theta = op[i].op.rotate.p->s.value;
+	      x = lookup_symbol(op[i].op.rotate.p->name)->s.value;
 	    }
-	  theta =  op[i].op.rotate.degrees * (M_PI / 180);
+	  theta =  op[i].op.rotate.degrees * (M_PI / 180) *x;
 	  if (op[i].op.rotate.axis == 0 )
 	    tmp = make_rotX( theta );
 	  else if (op[i].op.rotate.axis == 1 )
@@ -399,10 +400,9 @@ void my_main() {
       sprintf(file,"anim/%s%04d.png",name,ctr);
       printf("frame:%d",ctr);
       save_extension(t,file);
+      systems = new_stack();
+      clear_screen(t);
     }  
-    systems = new_stack();
-    
-    clear_screen(t);
     
   }
 }
